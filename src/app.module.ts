@@ -10,18 +10,33 @@ import { TasksModule } from './tasks/tasks.module';
 
 @Module({
   imports: [
+    // Load environment variables
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
     }),
 
+    // MongoDB connection
     MongooseModule.forRootAsync({
+      imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        uri: configService.get<string>('MONGODB_URI'),
-      }),
+
+      useFactory: (configService: ConfigService) => {
+        const mongoUri = configService.get<string>('MONGODB_URI');
+
+        if (!mongoUri) {
+          throw new Error(
+            'MONGODB_URI environment variable is not configured',
+          );
+        }
+
+        return {
+          uri: mongoUri,
+        };
+      },
     }),
 
+    // Application modules
     AuthModule,
     UsersModule,
     TasksModule,
