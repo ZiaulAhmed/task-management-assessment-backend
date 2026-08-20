@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../src/app.module';
 
-let cachedApp: any;
+let cachedApp: any = null;
 
 async function bootstrap() {
   if (cachedApp) {
@@ -21,7 +21,7 @@ async function bootstrap() {
 
   cachedApp = app;
 
-  return cachedApp;
+  return app;
 }
 
 export default async function handler(req: any, res: any) {
