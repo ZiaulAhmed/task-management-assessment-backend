@@ -1,37 +1,62 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { ExpressAdapter } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
+import express, { Request, Response } from 'express';
+
+const server = express();
+
+let app: any;
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  if (!app) {
+    app = await NestFactory.create(
+      AppModule,
+      new ExpressAdapter(server),
+    );
 
-  app.setGlobalPrefix('api');
+    app.setGlobalPrefix('api');
 
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      transform: true,
-      forbidNonWhitelisted: false,
-    }),
-  );
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        transform: true,
+        forbidNonWhitelisted: false,
+      }),
+    );
 
-  const config = new DocumentBuilder()
-    .setTitle('Task Management API')
-    .setDescription('Task Management Backend API')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build();
+    app.enableCors({
+      origin: true,
+      credentials: true,
+    });
 
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document);
+    await app.init();
+  }
 
-  app.enableCors({
-    origin: true,
-    credentials: true,
-  });
-
-  await app.listen(process.env.PORT || 3000);
+  return app;
 }
 
-bootstrap();
+server.all('*', async (req: Request, res: Response) => {
+  try {
+    await bootstrap();
+    server(req, res);
+  } catch (error) {
+    console.error('NestJS startup error:', error);
+    res.status(500).json({
+      statusCode: 500,
+      message: 'Internal server error',
+    });
+  }
+});
+
+if (!process.env.VERCEL) {
+  bootstrap().then(() => {
+    server.listen(process.env.PORT || 3000, () => {
+      console.log(
+        `Server running on http://localhost:${process.env.PORT || 3000}`,
+      );
+    });
+  });
+}
+
+export default server;
