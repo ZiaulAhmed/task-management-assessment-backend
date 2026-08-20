@@ -3,6 +3,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 
 import { AppController } from './app.controller';
+import { AppService } from './app.service';
+
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { TasksModule } from './tasks/tasks.module';
@@ -15,13 +17,12 @@ import { TasksModule } from './tasks/tasks.module';
     }),
 
     MongooseModule.forRootAsync({
-      imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
         const uri = configService.get<string>('MONGODB_URI');
 
         if (!uri) {
-          throw new Error('MONGODB_URI environment variable is not configured');
+          throw new Error('MONGODB_URI is not defined');
         }
 
         return {
@@ -36,5 +37,7 @@ import { TasksModule } from './tasks/tasks.module';
   ],
 
   controllers: [AppController],
+
+  providers: [AppService],
 })
 export class AppModule {}
