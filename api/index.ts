@@ -1,19 +1,14 @@
 import { NestFactory } from '@nestjs/core';
-import { ExpressAdapter } from '@nestjs/platform-express';
-import type { Request, Response } from 'express';
-import express from 'express';
-
 import { AppModule } from '../src/app.module';
 
-let cachedServer: any;
+let cachedApp: any;
 
 async function bootstrap() {
-  const expressApp = express();
+  if (cachedApp) {
+    return cachedApp;
+  }
 
-  const app = await NestFactory.create(
-    AppModule,
-    new ExpressAdapter(expressApp),
-  );
+  const app = await NestFactory.create(AppModule);
 
   app.setGlobalPrefix('api');
 
@@ -24,16 +19,15 @@ async function bootstrap() {
 
   await app.init();
 
-  return expressApp;
+  cachedApp = app;
+
+  return cachedApp;
 }
 
-export default async function handler(
-  req: Request,
-  res: Response,
-) {
-  if (!cachedServer) {
-    cachedServer = await bootstrap();
-  }
+export default async function handler(req: any, res: any) {
+  const app = await bootstrap();
 
-  return cachedServer(req, res);
+  const expressApp = app.getHttpAdapter().getInstance();
+
+  return expressApp(req, res);
 }

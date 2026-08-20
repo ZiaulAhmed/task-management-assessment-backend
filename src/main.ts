@@ -3,13 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
-let cachedApp: any;
-
 async function bootstrap() {
-  if (cachedApp) {
-    return cachedApp;
-  }
-
   const app = await NestFactory.create(AppModule);
 
   app.setGlobalPrefix('api');
@@ -40,13 +34,13 @@ async function bootstrap() {
 
   await app.init();
 
-  cachedApp = app.getHttpAdapter().getInstance();
-
-  return cachedApp;
+  return app;
 }
 
-export default async function handler(req: any, res: any) {
+async function start() {
   const app = await bootstrap();
 
-  return app(req, res);
+  await app.listen(process.env.PORT ?? 5000);
 }
+
+start();
