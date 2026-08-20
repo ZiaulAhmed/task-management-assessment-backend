@@ -3,14 +3,14 @@ import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
-let app: any;
+let cachedApp: any;
 
 async function bootstrap() {
-  if (app) {
-    return app;
+  if (cachedApp) {
+    return cachedApp;
   }
 
-  app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule);
 
   app.setGlobalPrefix('api');
 
@@ -40,13 +40,13 @@ async function bootstrap() {
 
   await app.init();
 
-  return app;
+  cachedApp = app.getHttpAdapter().getInstance();
+
+  return cachedApp;
 }
 
 export default async function handler(req: any, res: any) {
-  const nestApp = await bootstrap();
+  const app = await bootstrap();
 
-  const expressApp = nestApp.getHttpAdapter().getInstance();
-
-  return expressApp(req, res);
+  return app(req, res);
 }
